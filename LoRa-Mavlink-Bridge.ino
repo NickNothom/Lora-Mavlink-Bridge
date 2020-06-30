@@ -2,9 +2,12 @@
 #include "heltec.h"
 
 #define BAND    915E6  //you can set band here directly,e.g. 868E6,915E6
+#define BANDWIDTH 500E3
+#define SPREAD 10
 
 unsigned int counter = 0;
 String rssi = "RSSI --";
+String snr = "SNR --";
 String packSize = "--";
 String packet ;
 
@@ -17,7 +20,9 @@ void setup() {
   Heltec.display->setFont(ArialMT_Plain_10);
   Heltec.display->clear();
   Heltec.display->display();
-  
+
+  LoRa.setSignalBandwidth(BANDWIDTH);
+  LoRa.setSpreadingFactor(SPREAD);
 }
 
 void loop() {
@@ -67,6 +72,8 @@ void send_mavlink_lora(mavlink_message_t message) {
     
     Heltec.display->clear();
     Heltec.display->drawString(0 , 0 , "Sent "+ String(mavlink_message_length) + " bytes over LoRa");
+    Heltec.display->drawString(0 , 40 , rssi);
+    Heltec.display->drawString(60 , 40 , snr);
     Heltec.display->display();
     digitalWrite(LED, LOW);
 }
@@ -80,6 +87,8 @@ void send_mavlink_serial(mavlink_message_t message) {
 
     Heltec.display->clear();
     Heltec.display->drawString(0 , 0 , "Sent "+ String(mavlink_message_length) + " bytes over Serial");
+    Heltec.display->drawString(0 , 40 , rssi);
+    Heltec.display->drawString(60 , 40 , snr);
     Heltec.display->display();
     digitalWrite(LED, LOW);  
 }
@@ -110,7 +119,8 @@ void receive_mavlink_serial() {
 void receive_mavlink_lora(){
   static mavlink_message_t message;
   static mavlink_status_t status;
-  
+  rssi = "RSSI " + String(LoRa.packetRssi(), DEC) ;
+  snr = "SNR " + String(LoRa.packetSnr(), DEC) ; 
   // Read all data available from Lora and send over Serial
   while(LoRa.available() > 0) {
     uint8_t serial_byte = LoRa.read();
